@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../api/api_client.dart';
 import '../providers/game_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -22,14 +23,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
+  bool _loading = false;
+  String? _error;
 
-    // Mock login — accept anything
-    final username = email.split('@').first;
-    ref.read(playerProvider.notifier).login(username, email);
-    context.go('/tiers');
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Please fill in all fields');
+      return;
+    }
+
+    setState(() { _loading = true; _error = null; });
+    try {
+      final api = ref.read(apiClientProvider);
+      final data = await api.login(email, password);
+      final user = data['user'];
+      ref.read(playerProvider.notifier).login(
+        user['username'] ?? '',
+        user['email'] ?? '',
+      );
+      if (mounted) context.go('/tiers');
+    } catch (e) {
+      setState(() => _error = 'Invalid email or password');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -100,10 +119,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(color: Color(0xFF3D5AFE))),
                 ),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14)),
+              ],
               const SizedBox(height: 16),
               // Login button
               FilledButton(
-                onPressed: _login,
+                onPressed: _loading ? null : _login,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF3D5AFE),
                   padding: const EdgeInsets.symmetric(vertical: 16),

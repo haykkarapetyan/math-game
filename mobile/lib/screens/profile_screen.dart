@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../api/api_client.dart';
 import '../models/player.dart';
 import '../providers/game_provider.dart';
 
@@ -18,9 +19,10 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFF5D7B9A)),
-            onPressed: () {
+            onPressed: () async {
+              await ref.read(apiClientProvider).logout();
               ref.read(playerProvider.notifier).logout();
-              context.go('/login');
+              if (context.mounted) context.go('/login');
             },
           ),
         ],
@@ -242,6 +244,9 @@ class ProfileScreen extends ConsumerWidget {
                       ref
                           .read(playerProvider.notifier)
                           .setAvatar(avatar.id);
+                      ref
+                          .read(apiClientProvider)
+                          .updateProfile(avatar: avatar.id);
                       Navigator.of(ctx).pop();
                     },
                     child: Container(

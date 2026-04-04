@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../api/api_client.dart';
 import '../providers/game_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -24,13 +25,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  void _register() {
+  bool _loading = false;
+  String? _error;
+
+  Future<void> _register() async {
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
-    if (username.isEmpty || email.isEmpty) return;
+    final password = _passwordController.text;
+    if (username.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Please fill in all fields');
+      return;
+    }
 
-    ref.read(playerProvider.notifier).register(username, email);
-    context.go('/tiers');
+    setState(() { _loading = true; _error = null; });
+    try {
+      final api = ref.read(apiClientProvider);
+      final data = await api.register(username, email, password);
+      final user = data['user'];
+      ref.read(playerProvider.notifier).login(
+        user['username'] ?? '',
+        user['email'] ?? '',
+      );
+      if (mounted) context.go('/tiers');
+    } catch (e) {
+      setState(() => _error = 'Registration failed — username or email taken');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -83,9 +104,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14)),
+              ],
+              const SizedBox(height: 16),
               FilledButton(
-                onPressed: _register,
+                onPressed: _loading ? null : _register,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF3D5AFE),
                   padding: const EdgeInsets.symmetric(vertical: 16),

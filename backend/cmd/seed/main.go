@@ -19,6 +19,9 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+	// Enable UUID extension
+	db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
+
 	// Auto-migrate tables
 	if err := db.AutoMigrate(
 		&model.User{},
