@@ -142,7 +142,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 label: const Text('Continue with Apple'),
                 style: _socialButtonStyle(),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              // Skip login
+              TextButton(
+                onPressed: () {
+                  ref.read(playerProvider.notifier).login('Guest', 'guest@mathgame.app');
+                  context.go('/tiers');
+                },
+                child: const Text('Skip, play as guest',
+                    style: TextStyle(
+                        color: Color(0xFF90A4AE), fontSize: 15)),
+              ),
+              const SizedBox(height: 8),
               // Register link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -158,6 +169,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         )),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              // Dev: show all pages
+              TextButton.icon(
+                onPressed: () => context.push('/pages'),
+                icon: const Icon(Icons.grid_view, size: 16),
+                label: const Text('All Pages'),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFBDBDBD)),
               ),
             ],
           ),

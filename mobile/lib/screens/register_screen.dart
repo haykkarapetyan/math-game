@@ -112,6 +112,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  ref.read(playerProvider.notifier).login('Guest', 'guest@mathgame.app');
+                  context.go('/tiers');
+                },
+                child: const Text('Skip, play as guest',
+                    style: TextStyle(color: Color(0xFF90A4AE), fontSize: 15)),
+              ),
             ],
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/splash_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/register_screen.dart';
+import '../screens/pages_index_screen.dart';
 import '../screens/main_shell.dart';
 import '../screens/levels_screen.dart';
 import '../screens/puzzle_screen.dart';
@@ -21,6 +22,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/pages',
+      builder: (context, state) => const PagesIndexScreen(),
     ),
     GoRoute(
       path: '/tiers',
