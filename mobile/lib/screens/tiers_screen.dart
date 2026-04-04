@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
 
 class TiersScreen extends ConsumerWidget {
@@ -22,8 +23,15 @@ class TiersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tiers = ref.watch(tiersProvider);
     final player = ref.watch(playerProvider);
+    // Use API tiers if logged in, fall back to mock
+    final apiTiers = ref.watch(apiTiersProvider);
+    final mockTiers = ref.watch(tiersProvider);
+    final tiers = apiTiers.when(
+      data: (t) => t.isNotEmpty ? t : mockTiers,
+      loading: () => mockTiers,
+      error: (_, _) => mockTiers,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),

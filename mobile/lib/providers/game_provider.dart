@@ -246,6 +246,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
     );
   }
 
+  /// Load puzzle from API data (answers stay server-side)
+  void loadPuzzleFromData(Puzzle puzzle) {
+    state = PuzzleState(
+      puzzle: puzzle,
+      remainingPool: List<int>.from(puzzle.numberPool),
+    );
+  }
+
   void tick() {
     if (state == null || state!.completed) return;
     state = state!.copyWith(elapsedSeconds: state!.elapsedSeconds + 1);
@@ -355,14 +363,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
     final newHistory = List<MapEntry<String, int>>.from(state!.moveHistory);
     newHistory.add(MapEntry(key, value));
 
-    final allAnswered = state!.puzzle.answers.keys.every(
-      (k) => newAnswers.containsKey(k),
-    );
+    // All numbers placed = puzzle complete
+    final allAnswered = newPool.isEmpty;
 
     if (allAnswered) {
-      final allCorrect = state!.puzzle.answers.entries.every(
-        (e) => newAnswers[e.key] == e.value,
-      );
+      // For local puzzles, verify against answers map
+      // For API puzzles (empty answers), trust equation validation above
+      final allCorrect = state!.puzzle.answers.isEmpty ||
+          state!.puzzle.answers.entries.every(
+            (e) => newAnswers[e.key] == e.value,
+          );
       final stars = allCorrect
           ? _calculateStars(state!.wrongMoves, state!.elapsedSeconds)
           : 0;
@@ -418,42 +428,101 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
   void useHint() {
     if (state == null || !state!.canHint) return;
 
-    for (final entry in state!.puzzle.answers.entries) {
-      if (!state!.playerAnswers.containsKey(entry.key)) {
-        final value = entry.value;
-
-        final newPool = List<int>.from(state!.remainingPool);
-        final poolIdx = newPool.indexOf(value);
-        if (poolIdx < 0) return;
-        newPool.removeAt(poolIdx);
-
-        final newAnswers = Map<String, int>.from(state!.playerAnswers);
-        newAnswers[entry.key] = value;
-
-        final newHistory = List<MapEntry<String, int>>.from(state!.moveHistory);
-        newHistory.add(MapEntry(entry.key, value));
-
-        final allAnswered = state!.puzzle.answers.keys.every(
-          (k) => newAnswers.containsKey(k),
-        );
-
-        state = state!.copyWith(
-          playerAnswers: newAnswers,
-          remainingPool: newPool,
-          clearSelection: true,
-          clearPool: true,
-          moves: state!.moves + 1,
-          moveHistory: newHistory,
-          hintsUsed: state!.hintsUsed + 1,
-          completed: allAnswered,
-          stars: allAnswered
-              ? _calculateStars(state!.wrongMoves, state!.elapsedSeconds)
-              : null,
-          wrongCells: {},
-        );
-        return;
+    // Find blank cells and try to solve one using equations
+    final blankCells = <String>[];
+    for (final cell in state!.puzzle.cells) {
+      if (cell.isBlank) {
+        final key = '${cell.row},${cell.col}';
+        if (!state!.playerAnswers.containsKey(key)) {
+          blankCells.add(key);
+        }
       }
     }
+    if (blankCells.isEmpty) return;
+
+    // If we have local answers, use them
+    if (state!.puzzle.answers.isNotEmpty) {
+      for (final key in blankCells) {
+        if (state!.puzzle.answers.containsKey(key)) {
+          _placeHint(key, state!.puzzle.answers[key]!);
+          return;
+        }
+      }
+      return;
+    }
+
+    // For API puzzles: solve using equations
+    for (final key in blankCells) {
+      final equations = state!.puzzle.equationsForCell(key);
+      for (final eq in equations) {
+        final currentAnswers = Map<String, int>.from(state!.playerAnswers);
+        final v1 = state!.puzzle.getValue(eq.num1Key, currentAnswers);
+        final v2 = state!.puzzle.getValue(eq.num2Key, currentAnswers);
+
+        // If one value is known, compute the other
+        int? solved;
+        if (v1 != null && v2 == null && eq.num2Key == key) {
+          solved = _solveForSecond(v1, eq.op, eq.result);
+        } else if (v1 == null && v2 != null && eq.num1Key == key) {
+          solved = _solveForFirst(eq.op, v2, eq.result);
+        }
+
+        if (solved != null && state!.remainingPool.contains(solved)) {
+          _placeHint(key, solved);
+          return;
+        }
+      }
+    }
+  }
+
+  int? _solveForSecond(int a, String op, int result) {
+    switch (op) {
+      case '+': return result - a;
+      case '-': return a - result;
+      case '*': return result != 0 && a != 0 && result % a == 0 ? result ~/ a : null;
+      case '/': return a != 0 ? a ~/ result : null;
+      default: return null;
+    }
+  }
+
+  int? _solveForFirst(String op, int b, int result) {
+    switch (op) {
+      case '+': return result - b;
+      case '-': return result + b;
+      case '*': return result != 0 && b != 0 && result % b == 0 ? result ~/ b : null;
+      case '/': return result * b;
+      default: return null;
+    }
+  }
+
+  void _placeHint(String key, int value) {
+    final newPool = List<int>.from(state!.remainingPool);
+    final poolIdx = newPool.indexOf(value);
+    if (poolIdx < 0) return;
+    newPool.removeAt(poolIdx);
+
+    final newAnswers = Map<String, int>.from(state!.playerAnswers);
+    newAnswers[key] = value;
+
+    final newHistory = List<MapEntry<String, int>>.from(state!.moveHistory);
+    newHistory.add(MapEntry(key, value));
+
+    final allAnswered = newPool.isEmpty;
+
+    state = state!.copyWith(
+      playerAnswers: newAnswers,
+      remainingPool: newPool,
+      clearSelection: true,
+      clearPool: true,
+      moves: state!.moves + 1,
+      moveHistory: newHistory,
+      hintsUsed: state!.hintsUsed + 1,
+      completed: allAnswered,
+      stars: allAnswered
+          ? _calculateStars(state!.wrongMoves, state!.elapsedSeconds)
+          : null,
+      wrongCells: {},
+    );
   }
 
   /// Stars based on wrong moves + time

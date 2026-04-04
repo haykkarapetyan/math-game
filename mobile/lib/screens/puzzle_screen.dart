@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../api/api_client.dart';
+import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
 import '../widgets/crossword_grid.dart';
 import '../widgets/game_loader.dart';
@@ -26,15 +28,35 @@ class PuzzleScreen extends ConsumerStatefulWidget {
 
 class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
   Timer? _timer;
+  int? _serverPuzzleId; // for API submission
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(puzzleProvider.notifier).loadPuzzle(widget.levelId);
-      ref.read(playerProvider.notifier).useEnergy();
-      _startTimer();
+      _loadPuzzle();
     });
+  }
+
+  Future<void> _loadPuzzle() async {
+    final api = ref.read(apiClientProvider);
+    if (await api.hasToken()) {
+      // Load from API
+      try {
+        final apiPuzzle = await ref.read(apiPuzzleProvider(widget.levelId).future);
+        if (apiPuzzle != null) {
+          _serverPuzzleId = apiPuzzle.id;
+          ref.read(puzzleProvider.notifier).loadPuzzleFromData(apiPuzzle.puzzle);
+        }
+      } catch (_) {
+        // Fall back to local generator
+        ref.read(puzzleProvider.notifier).loadPuzzle(widget.levelId);
+      }
+    } else {
+      ref.read(puzzleProvider.notifier).loadPuzzle(widget.levelId);
+    }
+    ref.read(playerProvider.notifier).useEnergy();
+    _startTimer();
   }
 
   void _startTimer() {
@@ -146,9 +168,16 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                   selectedCell: puzzleState.selectedCell,
                   wrongCells: puzzleState.wrongCells,
                   onCellTap: (cellKey) {
-                    // Only allow tapping blank, unanswered cells
-                    if (puzzleState.puzzle.answers.containsKey(cellKey) &&
-                        !puzzleState.playerAnswers.containsKey(cellKey)) {
+                    // Allow tapping blank, unanswered cells
+                    // Check both local answers map and cell.isBlank
+                    final parts = cellKey.split(',');
+                    final r = int.parse(parts[0]);
+                    final c = int.parse(parts[1]);
+                    final cell = puzzleState.puzzle.cellAt(r, c);
+                    final isBlank = cell != null && cell.isBlank;
+                    final isAnswerable = isBlank &&
+                        !puzzleState.playerAnswers.containsKey(cellKey);
+                    if (isAnswerable) {
                       ref.read(puzzleProvider.notifier).selectCell(cellKey);
                     }
                   },
@@ -223,23 +252,57 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     );
   }
 
-  void _onPuzzleComplete(PuzzleState state) {
-    final xpEarned = _calculateXp(state.stars);
+  Future<void> _onPuzzleComplete(PuzzleState state) async {
+    var xpEarned = _calculateXp(state.stars);
+    var stars = state.stars;
 
+    // Submit to API if we have a server puzzle ID
+    if (_serverPuzzleId != null) {
+      try {
+        final api = ref.read(apiClientProvider);
+        final cells = state.playerAnswers.entries.map((e) {
+          final parts = e.key.split(',');
+          return {
+            'row': int.parse(parts[0]),
+            'col': int.parse(parts[1]),
+            'value': e.value,
+          };
+        }).toList();
+
+        final result = await api.submitPuzzle(
+          _serverPuzzleId!,
+          cells,
+          state.elapsedSeconds * 1000,
+          state.wrongMoves,
+        );
+
+        // Use server-computed values
+        xpEarned = result['xp_earned'] ?? xpEarned;
+        stars = result['stars'] ?? stars;
+
+        // Invalidate API caches so levels refresh
+        ref.invalidate(apiLevelsProvider(widget.tierId));
+        ref.invalidate(apiTiersProvider);
+      } catch (_) {
+        // Continue with local values if API fails
+      }
+    }
+
+    // Update local state
     ref.read(tiersProvider.notifier).completeLevel(
           widget.tierId,
           widget.chapterId,
           widget.levelId,
-          state.stars,
+          stars,
         );
     ref.read(playerProvider.notifier).addXp(xpEarned);
-    ref.read(playerProvider.notifier).addStars(state.stars);
+    ref.read(playerProvider.notifier).addStars(stars);
     ref.read(playerProvider.notifier).completeLevel();
 
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) {
         context.pushReplacement('/complete', extra: {
-          'stars': state.stars,
+          'stars': stars,
           'xpEarned': xpEarned,
           'mistakes': state.wrongMoves,
           'time': state.elapsedSeconds,
