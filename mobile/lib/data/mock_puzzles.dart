@@ -26,16 +26,16 @@ Cell _eq(int r, int c) =>
 MathEquation _hEq(int row, String op, int result) => MathEquation(
       num1Key: '$row,0',
       num2Key: '$row,2',
+      resultKey: '$row,4',
       op: op,
-      result: result,
       allCellKeys: ['$row,0', '$row,1', '$row,2', '$row,3', '$row,4'],
     );
 
 MathEquation _vEq(int col, String op, int result) => MathEquation(
       num1Key: '0,$col',
       num2Key: '2,$col',
+      resultKey: '4,$col',
       op: op,
-      result: result,
       allCellKeys: ['0,$col', '1,$col', '2,$col', '3,$col', '4,$col'],
     );
 

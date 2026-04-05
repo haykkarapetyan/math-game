@@ -308,10 +308,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
     for (final eq in equations) {
       final v1 = state!.puzzle.getValue(eq.num1Key, newAnswers);
       final v2 = state!.puzzle.getValue(eq.num2Key, newAnswers);
-      if (v1 != null && v2 != null) {
-        if (!eq.evaluate(v1, v2)) {
-          wrongKeys.addAll(eq.allCellKeys);
-        }
+      final vr = state!.puzzle.getValue(eq.resultKey, newAnswers);
+      final result = eq.evaluateWith(v1, v2, vr);
+      if (result == false) {
+        wrongKeys.addAll(eq.allCellKeys);
       }
     }
 
@@ -458,13 +458,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
         final currentAnswers = Map<String, int>.from(state!.playerAnswers);
         final v1 = state!.puzzle.getValue(eq.num1Key, currentAnswers);
         final v2 = state!.puzzle.getValue(eq.num2Key, currentAnswers);
+        final vr = state!.puzzle.getValue(eq.resultKey, currentAnswers);
 
-        // If one value is known, compute the other
+        // Try to solve for the missing value in this equation
         int? solved;
-        if (v1 != null && v2 == null && eq.num2Key == key) {
-          solved = _solveForSecond(v1, eq.op, eq.result);
-        } else if (v1 == null && v2 != null && eq.num1Key == key) {
-          solved = _solveForFirst(eq.op, v2, eq.result);
+        if (eq.num1Key == key && v1 == null && v2 != null && vr != null) {
+          solved = _solveForFirst(eq.op, v2, vr);
+        } else if (eq.num2Key == key && v1 != null && v2 == null && vr != null) {
+          solved = _solveForSecond(v1, eq.op, vr);
+        } else if (eq.resultKey == key && v1 != null && v2 != null && vr == null) {
+          solved = _computeResult(v1, eq.op, v2);
         }
 
         if (solved != null && state!.remainingPool.contains(solved)) {
@@ -481,6 +484,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleState?> {
       case '-': return a - result;
       case '*': return result != 0 && a != 0 && result % a == 0 ? result ~/ a : null;
       case '/': return a != 0 ? a ~/ result : null;
+      default: return null;
+    }
+  }
+
+  int? _computeResult(int a, String op, int b) {
+    switch (op) {
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return b != 0 && a % b == 0 ? a ~/ b : null;
       default: return null;
     }
   }

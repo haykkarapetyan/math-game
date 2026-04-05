@@ -97,53 +97,31 @@ List<MathEquation> _buildEquations(List<Cell> cells) {
     return '+';
   }
 
-  // Find result value at position
-  int? findNum(int row, int col) {
-    for (final c in cells) {
-      if (c.row == row && c.col == col && c.type == CellType.number && c.given) {
-        return c.value as int?;
-      }
-    }
-    return null;
-  }
-
   final equations = <MathEquation>[];
 
   // Row 0: (0,0) op(0,1) (0,2) = (0,4)
-  final r0result = findNum(0, 4);
-  if (r0result != null) {
-    equations.add(MathEquation(
-      num1Key: '0,0', num2Key: '0,2', op: findOp(0, 1), result: r0result,
-      allCellKeys: ['0,0', '0,1', '0,2', '0,3', '0,4'],
-    ));
-  }
+  equations.add(MathEquation(
+    num1Key: '0,0', num2Key: '0,2', resultKey: '0,4', op: findOp(0, 1),
+    allCellKeys: ['0,0', '0,1', '0,2', '0,3', '0,4'],
+  ));
 
   // Row 1: (2,0) op(2,1) (2,2) = (2,4)
-  final r1result = findNum(2, 4);
-  if (r1result != null) {
-    equations.add(MathEquation(
-      num1Key: '2,0', num2Key: '2,2', op: findOp(2, 1), result: r1result,
-      allCellKeys: ['2,0', '2,1', '2,2', '2,3', '2,4'],
-    ));
-  }
+  equations.add(MathEquation(
+    num1Key: '2,0', num2Key: '2,2', resultKey: '2,4', op: findOp(2, 1),
+    allCellKeys: ['2,0', '2,1', '2,2', '2,3', '2,4'],
+  ));
 
   // Col 0: (0,0) op(1,0) (2,0) = (4,0)
-  final c0result = findNum(4, 0);
-  if (c0result != null) {
-    equations.add(MathEquation(
-      num1Key: '0,0', num2Key: '2,0', op: findOp(1, 0), result: c0result,
-      allCellKeys: ['0,0', '1,0', '2,0', '3,0', '4,0'],
-    ));
-  }
+  equations.add(MathEquation(
+    num1Key: '0,0', num2Key: '2,0', resultKey: '4,0', op: findOp(1, 0),
+    allCellKeys: ['0,0', '1,0', '2,0', '3,0', '4,0'],
+  ));
 
   // Col 1: (0,2) op(1,2) (2,2) = (4,2)
-  final c1result = findNum(4, 2);
-  if (c1result != null) {
-    equations.add(MathEquation(
-      num1Key: '0,2', num2Key: '2,2', op: findOp(1, 2), result: c1result,
-      allCellKeys: ['0,2', '1,2', '2,2', '3,2', '4,2'],
-    ));
-  }
+  equations.add(MathEquation(
+    num1Key: '0,2', num2Key: '2,2', resultKey: '4,2', op: findOp(1, 2),
+    allCellKeys: ['0,2', '1,2', '2,2', '3,2', '4,2'],
+  ));
 
   return equations;
 }

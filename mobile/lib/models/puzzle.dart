@@ -24,32 +24,41 @@ class Cell {
 class MathEquation {
   final String num1Key; // "row,col" of first operand
   final String num2Key; // "row,col" of second operand
+  final String resultKey; // "row,col" of result cell
   final String op; // "+", "-", "*", "/"
-  final int result; // expected result
+  final int? resultValue; // expected result (null if result cell is blank)
   final List<String> allCellKeys; // all cells to highlight if wrong
 
   const MathEquation({
     required this.num1Key,
     required this.num2Key,
+    required this.resultKey,
     required this.op,
-    required this.result,
+    this.resultValue,
     required this.allCellKeys,
   });
 
-  /// Evaluate whether this equation is correct given the values
-  bool evaluate(int num1, int num2) {
+  /// Evaluate whether this equation is correct given cell values
+  /// Returns true if equation is satisfied, false if violated,
+  /// null if not enough data to evaluate
+  bool? evaluateWith(int? num1, int? num2, int? result) {
+    if (num1 == null || num2 == null || result == null) return null;
+
+    int expected;
     switch (op) {
       case '+':
-        return num1 + num2 == result;
+        expected = num1 + num2;
       case '-':
-        return num1 - num2 == result;
+        expected = num1 - num2;
       case '*':
-        return num1 * num2 == result;
+        expected = num1 * num2;
       case '/':
-        return num2 != 0 && num1 ~/ num2 == result && num1 % num2 == 0;
+        if (num2 == 0 || num1 % num2 != 0) return false;
+        expected = num1 ~/ num2;
       default:
         return false;
     }
+    return expected == result;
   }
 }
 
@@ -97,10 +106,13 @@ class Puzzle {
     return null;
   }
 
-  /// Get all equations that involve a specific cell
+  /// Get all equations that involve a specific cell (as operand OR result)
   List<MathEquation> equationsForCell(String cellKey) {
     return equations
-        .where((eq) => eq.num1Key == cellKey || eq.num2Key == cellKey)
+        .where((eq) =>
+            eq.num1Key == cellKey ||
+            eq.num2Key == cellKey ||
+            eq.resultKey == cellKey)
         .toList();
   }
 }

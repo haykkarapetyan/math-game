@@ -152,22 +152,22 @@ class PuzzleGenerator {
       _numCell(4, 2, r4, !blankPositions.contains(7)),
     ];
 
-    // Build equations
+    // Build equations with resultKey for proper validation
     final equations = [
       MathEquation(
-        num1Key: '0,0', num2Key: '0,2', op: op1, result: r1,
+        num1Key: '0,0', num2Key: '0,2', resultKey: '0,4', op: op1,
         allCellKeys: ['0,0', '0,1', '0,2', '0,3', '0,4'],
       ),
       MathEquation(
-        num1Key: '2,0', num2Key: '2,2', op: op2, result: r2,
+        num1Key: '2,0', num2Key: '2,2', resultKey: '2,4', op: op2,
         allCellKeys: ['2,0', '2,1', '2,2', '2,3', '2,4'],
       ),
       MathEquation(
-        num1Key: '0,0', num2Key: '2,0', op: op3, result: r3,
+        num1Key: '0,0', num2Key: '2,0', resultKey: '4,0', op: op3,
         allCellKeys: ['0,0', '1,0', '2,0', '3,0', '4,0'],
       ),
       MathEquation(
-        num1Key: '0,2', num2Key: '2,2', op: op4, result: r4,
+        num1Key: '0,2', num2Key: '2,2', resultKey: '4,2', op: op4,
         allCellKeys: ['0,2', '1,2', '2,2', '3,2', '4,2'],
       ),
     ];
