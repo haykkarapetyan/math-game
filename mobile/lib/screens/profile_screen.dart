@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../l10n/app_localizations.dart';
 import '../api/api_client.dart';
+import '../main.dart';
 import '../models/player.dart';
 import '../providers/game_provider.dart';
 
@@ -165,7 +167,49 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            // Language selector
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(AppLocalizations.of(context)?.profile ?? 'Language',
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2C3E50))),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _LanguageChip(
+                        label: 'English',
+                        locale: const Locale('en'),
+                        ref: ref,
+                      ),
+                      const SizedBox(width: 8),
+                      _LanguageChip(
+                        label: 'Հայerен',
+                        locale: const Locale('hy'),
+                        ref: ref,
+                      ),
+                      const SizedBox(width: 8),
+                      _LanguageChip(
+                        label: 'Русский',
+                        locale: const Locale('ru'),
+                        ref: ref,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             // Achievements placeholder
             Container(
               width: double.infinity,
@@ -343,6 +387,52 @@ class _AchievementBadge extends StatelessWidget {
           Text(label,
               style: const TextStyle(fontSize: 10, color: Color(0xFF5D7B9A))),
         ],
+      ),
+    );
+  }
+}
+
+class _LanguageChip extends StatelessWidget {
+  final String label;
+  final Locale locale;
+  final WidgetRef ref;
+
+  const _LanguageChip({
+    required this.label,
+    required this.locale,
+    required this.ref,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final current = ref.watch(localeProvider);
+    final isSelected = current.languageCode == locale.languageCode;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        ref.read(localeProvider.notifier).state = locale;
+        ref.read(apiClientProvider).updateProfile(language: locale.languageCode);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF3D5AFE)
+              : const Color(0xFFF0F4F8),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF5D7B9A),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }

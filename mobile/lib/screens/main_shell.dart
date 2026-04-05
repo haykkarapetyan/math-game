@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'tiers_screen.dart';
 import 'leaderboard_screen.dart';
 import 'friends_screen.dart';
@@ -49,28 +50,28 @@ class _MainShellState extends State<MainShell> {
                 _NavItem(
                   icon: Icons.home_outlined,
                   activeIcon: Icons.home,
-                  label: 'Home',
+                  label: AppLocalizations.of(context)?.home ?? 'Home',
                   isActive: _currentIndex == 0,
                   onTap: () => setState(() => _currentIndex = 0),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_outlined,
                   activeIcon: Icons.leaderboard,
-                  label: 'Score',
+                  label: AppLocalizations.of(context)?.score ?? 'Score',
                   isActive: _currentIndex == 1,
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
                 _NavItem(
                   icon: Icons.people_outlined,
                   activeIcon: Icons.people,
-                  label: 'Friends',
+                  label: AppLocalizations.of(context)?.friends ?? 'Friends',
                   isActive: _currentIndex == 2,
                   onTap: () => setState(() => _currentIndex = 2),
                 ),
                 _NavItem(
                   icon: Icons.person_outlined,
                   activeIcon: Icons.person,
-                  label: 'Profile',
+                  label: AppLocalizations.of(context)?.profile ?? 'Profile',
                   isActive: _currentIndex == 3,
                   onTap: () => setState(() => _currentIndex = 3),
                 ),

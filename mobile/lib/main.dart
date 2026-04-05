@@ -1,29 +1,43 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router/app_router.dart';
+
+/// Current locale provider — defaults to English
+final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
 void main() {
   runApp(
     ProviderScope(
       child: DevicePreview(
-        enabled: kIsWeb, // only enable on web
+        enabled: kIsWeb,
         builder: (context) => const MathGameApp(),
       ),
     ),
   );
 }
 
-class MathGameApp extends StatelessWidget {
+class MathGameApp extends ConsumerWidget {
   const MathGameApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp.router(
       title: 'Math Crossword',
       debugShowCheckedModeBanner: false,
-      locale: DevicePreview.locale(context),
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: DevicePreview.appBuilder,
       theme: ThemeData(
         brightness: Brightness.light,
