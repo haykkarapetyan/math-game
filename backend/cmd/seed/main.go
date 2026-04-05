@@ -31,6 +31,11 @@ func main() {
 		&model.Puzzle{},
 		&model.UserLevelProgress{},
 		&model.UserPuzzleLog{},
+		&model.Friendship{},
+		&model.Referral{},
+		&model.Challenge{},
+		&model.ChallengeScore{},
+		&model.LeaderboardWeekly{},
 	); err != nil {
 		log.Fatal("Failed to migrate:", err)
 	}

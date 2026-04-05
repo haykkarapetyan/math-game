@@ -49,6 +49,7 @@ func main() {
 	userSvc := service.NewUserService(db)
 	energySvc := service.NewEnergyService(db)
 	gameSvc := service.NewGameService(db, energySvc)
+	socialSvc := service.NewSocialService(db)
 
 	// Routes
 	api := app.Group("/api")
@@ -56,6 +57,7 @@ func main() {
 	handler.RegisterProfileRoutes(api, userSvc, authMw)
 	handler.RegisterGameRoutes(api, gameSvc, authMw)
 	handler.RegisterEnergyRoutes(api, energySvc, authMw)
+	handler.RegisterSocialRoutes(api, socialSvc, authMw)
 
 	// Health check
 	app.Get("/health", func(c *fiber.Ctx) error {

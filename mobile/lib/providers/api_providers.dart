@@ -3,6 +3,23 @@ import '../api/api_client.dart';
 import '../models/game.dart';
 import '../models/puzzle.dart';
 
+/// Fetch friends from backend API
+final apiFriendsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final api = ref.read(apiClientProvider);
+  if (!await api.hasToken()) return [];
+  final data = await api.getFriends();
+  return data.cast<Map<String, dynamic>>();
+});
+
+/// Fetch leaderboard from backend API
+final apiLeaderboardProvider = FutureProvider.family<List<Map<String, dynamic>>, String>(
+    (ref, scope) async {
+  final api = ref.read(apiClientProvider);
+  if (!await api.hasToken()) return [];
+  final data = await api.getLeaderboard(scope: scope);
+  return data.cast<Map<String, dynamic>>();
+});
+
 /// Fetch tiers from backend API
 final apiTiersProvider = FutureProvider<List<Tier>>((ref) async {
   final api = ref.read(apiClientProvider);

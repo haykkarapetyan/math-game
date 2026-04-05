@@ -155,6 +155,35 @@ class ApiClient {
     await _dio.post('/energy/refill');
   }
 
+  // --- Social ---
+
+  Future<List<dynamic>> getFriends() async {
+    final response = await _dio.get('/friends');
+    return response.data;
+  }
+
+  Future<void> addFriend(String friendUsername) async {
+    await _dio.post('/friends/add', data: {'friend_username': friendUsername});
+  }
+
+  Future<List<dynamic>> getLeaderboard({String scope = 'global'}) async {
+    final response = await _dio.get('/leaderboard', queryParameters: {'scope': scope});
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> createChallenge(String opponentId, int levelId) async {
+    final response = await _dio.post('/challenges', data: {
+      'opponent_id': opponentId,
+      'level_id': levelId,
+    });
+    return response.data;
+  }
+
+  Future<List<dynamic>> getChallenges() async {
+    final response = await _dio.get('/challenges');
+    return response.data;
+  }
+
   // --- Helpers ---
 
   Future<void> _saveTokens(Map<String, dynamic> data) async {

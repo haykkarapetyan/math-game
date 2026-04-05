@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../api/api_client.dart';
+import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
 
 class FriendsScreen extends ConsumerWidget {
@@ -7,7 +9,15 @@ class FriendsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final friends = ref.watch(friendsProvider);
+    final mockFriends = ref.watch(friendsProvider);
+    final apiFriends = ref.watch(apiFriendsProvider);
+
+    // Use API friends if available, else mock
+    final friends = apiFriends.when(
+      data: (f) => f.isNotEmpty ? f : mockFriends,
+      loading: () => mockFriends,
+      error: (_, _) => mockFriends,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
@@ -16,7 +26,7 @@ class FriendsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_outlined),
-            onPressed: () => _showInviteDialog(context),
+            onPressed: () => _showAddFriendDialog(context, ref),
           ),
         ],
       ),
@@ -70,7 +80,7 @@ class FriendsScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Text(
-                  '${friends.where((f) => f.isOnline).length} Online',
+                  '${friends.where((f) => f is Map ? (f['is_online'] == true) : (f as dynamic).isOnline).length} Online',
                   style: const TextStyle(
                       color: Color(0xFF4CAF50),
                       fontWeight: FontWeight.w600),
@@ -95,6 +105,46 @@ class FriendsScreen extends ConsumerWidget {
                 return _FriendTile(friend: friend);
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddFriendDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Friend'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter username',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (controller.text.trim().isEmpty) return;
+              try {
+                await ref.read(apiClientProvider).addFriend(controller.text.trim());
+                ref.invalidate(apiFriendsProvider);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              } catch (_) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Could not add friend')),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
           ),
         ],
       ),

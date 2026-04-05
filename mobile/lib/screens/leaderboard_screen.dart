@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -27,8 +28,21 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final leaderboard = ref.watch(leaderboardProvider);
+    final mockLeaderboard = ref.watch(leaderboardProvider);
     final player = ref.watch(playerProvider);
+    final apiGlobal = ref.watch(apiLeaderboardProvider('global'));
+    final apiFriends = ref.watch(apiLeaderboardProvider('friends'));
+
+    final globalEntries = apiGlobal.when(
+      data: (d) => d.isNotEmpty ? d : mockLeaderboard,
+      loading: () => mockLeaderboard,
+      error: (_, _) => mockLeaderboard,
+    );
+    final friendEntries = apiFriends.when(
+      data: (d) => d.isNotEmpty ? d : mockLeaderboard,
+      loading: () => mockLeaderboard,
+      error: (_, _) => mockLeaderboard,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
@@ -48,16 +62,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Global
           _LeaderboardList(
-            entries: leaderboard,
+            entries: globalEntries,
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
           ),
-          // Friends (same data for mock)
           _LeaderboardList(
-            entries: leaderboard,
+            entries: friendEntries,
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
