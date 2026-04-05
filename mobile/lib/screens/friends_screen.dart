@@ -13,6 +13,7 @@ class FriendsScreen extends ConsumerWidget {
     final apiFriends = ref.watch(apiFriendsProvider);
 
     // Use API friends if available, else mock
+    final isApi = apiFriends.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
     final friends = apiFriends.when(
       data: (f) => f.isNotEmpty ? f : mockFriends,
       loading: () => mockFriends,
@@ -74,6 +75,30 @@ class FriendsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          // Demo data banner
+          if (!isApi)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFFCC02)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFFE65100), size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Demo data — add friends by username to see real list!',
+                      style: TextStyle(color: Color(0xFFE65100), fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
           // Online / offline header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

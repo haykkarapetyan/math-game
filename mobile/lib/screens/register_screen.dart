@@ -48,7 +48,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       if (mounted) context.go('/tiers');
     } catch (e) {
-      setState(() => _error = 'Registration failed — username or email taken');
+      final msg = e.toString();
+      if (msg.contains('username') || msg.contains('email') || msg.contains('taken')) {
+        setState(() => _error = 'Username or email already taken');
+      } else {
+        setState(() => _error = 'Registration failed: $msg');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

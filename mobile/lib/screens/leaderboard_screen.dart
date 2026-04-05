@@ -33,6 +33,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final apiGlobal = ref.watch(apiLeaderboardProvider('global'));
     final apiFriends = ref.watch(apiLeaderboardProvider('friends'));
 
+    final globalIsApi = apiGlobal.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
+    final friendsIsApi = apiFriends.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
     final globalEntries = apiGlobal.when(
       data: (d) => d.isNotEmpty ? d : mockLeaderboard,
       loading: () => mockLeaderboard,
@@ -67,12 +69,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
+            isDemo: !globalIsApi,
           ),
           _LeaderboardList(
             entries: friendEntries,
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
+            isDemo: !friendsIsApi,
           ),
         ],
       ),
@@ -85,12 +89,14 @@ class _LeaderboardList extends StatelessWidget {
   final int currentPlayerXp;
   final String currentPlayerAvatar;
   final String currentPlayerName;
+  final bool isDemo;
 
   const _LeaderboardList({
     required this.entries,
     required this.currentPlayerXp,
     required this.currentPlayerAvatar,
     required this.currentPlayerName,
+    this.isDemo = false,
   });
 
   @override
@@ -98,6 +104,29 @@ class _LeaderboardList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Demo data banner
+        if (isDemo)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFCC02)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Color(0xFFE65100), size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Demo data — play levels to see real rankings!',
+                    style: TextStyle(color: Color(0xFFE65100), fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
         // Top 3 podium
         if (entries.length >= 3)
           Padding(
