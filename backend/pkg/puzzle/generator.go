@@ -17,15 +17,15 @@ type LevelConfig struct {
 func GetLevelConfig(levelNum int) LevelConfig {
 	configs := map[int]LevelConfig{
 		1:  {MinNum: 1, MaxNum: 5, Ops: []string{"+"}, BlankCount: 1, TimeLimitSec: 30},
-		2:  {MinNum: 1, MaxNum: 6, Ops: []string{"+"}, BlankCount: 1, TimeLimitSec: 30},
-		3:  {MinNum: 1, MaxNum: 7, Ops: []string{"+"}, BlankCount: 2, TimeLimitSec: 45},
-		4:  {MinNum: 1, MaxNum: 8, Ops: []string{"+"}, BlankCount: 2, TimeLimitSec: 45},
-		5:  {MinNum: 1, MaxNum: 9, Ops: []string{"+"}, BlankCount: 3, TimeLimitSec: 60},
-		6:  {MinNum: 2, MaxNum: 12, Ops: []string{"+"}, BlankCount: 3, TimeLimitSec: 60},
-		7:  {MinNum: 1, MaxNum: 9, Ops: []string{"+", "-"}, BlankCount: 3, TimeLimitSec: 75},
-		8:  {MinNum: 2, MaxNum: 12, Ops: []string{"+", "-"}, BlankCount: 3, TimeLimitSec: 75},
-		9:  {MinNum: 1, MaxNum: 12, Ops: []string{"+", "-"}, BlankCount: 4, TimeLimitSec: 90},
-		10: {MinNum: 1, MaxNum: 9, Ops: []string{"+", "*"}, BlankCount: 4, TimeLimitSec: 90},
+		2:  {MinNum: 1, MaxNum: 6, Ops: []string{"+"}, BlankCount: 2, TimeLimitSec: 45},
+		3:  {MinNum: 1, MaxNum: 7, Ops: []string{"+"}, BlankCount: 3, TimeLimitSec: 60},
+		4:  {MinNum: 1, MaxNum: 8, Ops: []string{"+"}, BlankCount: 4, TimeLimitSec: 75},
+		5:  {MinNum: 1, MaxNum: 9, Ops: []string{"+"}, BlankCount: 5, TimeLimitSec: 90},
+		6:  {MinNum: 2, MaxNum: 12, Ops: []string{"+", "-"}, BlankCount: 5, TimeLimitSec: 90},
+		7:  {MinNum: 1, MaxNum: 9, Ops: []string{"+", "-"}, BlankCount: 6, TimeLimitSec: 105},
+		8:  {MinNum: 2, MaxNum: 12, Ops: []string{"+", "-"}, BlankCount: 6, TimeLimitSec: 105},
+		9:  {MinNum: 1, MaxNum: 12, Ops: []string{"+", "-"}, BlankCount: 7, TimeLimitSec: 120},
+		10: {MinNum: 1, MaxNum: 9, Ops: []string{"+", "-", "*"}, BlankCount: 8, TimeLimitSec: 120},
 	}
 	if c, ok := configs[levelNum]; ok {
 		return c

@@ -18,18 +18,18 @@ class LevelConfig {
   });
 }
 
-/// Level configs — difficulty curve
+/// Level configs — each level adds 1 more blank, operations get harder
 final Map<int, LevelConfig> levelConfigs = {
-  1: const LevelConfig(minNum: 1, maxNum: 5, ops: ['+'], blankCount: 1, timeLimitSec: 30),
-  2: const LevelConfig(minNum: 1, maxNum: 6, ops: ['+'], blankCount: 1, timeLimitSec: 30),
-  3: const LevelConfig(minNum: 1, maxNum: 7, ops: ['+'], blankCount: 2, timeLimitSec: 45),
-  4: const LevelConfig(minNum: 1, maxNum: 8, ops: ['+'], blankCount: 2, timeLimitSec: 45),
-  5: const LevelConfig(minNum: 1, maxNum: 9, ops: ['+'], blankCount: 3, timeLimitSec: 60),
-  6: const LevelConfig(minNum: 2, maxNum: 12, ops: ['+'], blankCount: 3, timeLimitSec: 60),
-  7: const LevelConfig(minNum: 1, maxNum: 9, ops: ['+', '-'], blankCount: 3, timeLimitSec: 75),
-  8: const LevelConfig(minNum: 2, maxNum: 12, ops: ['+', '-'], blankCount: 3, timeLimitSec: 75),
-  9: const LevelConfig(minNum: 1, maxNum: 12, ops: ['+', '-'], blankCount: 4, timeLimitSec: 90),
-  10: const LevelConfig(minNum: 1, maxNum: 9, ops: ['+', '*'], blankCount: 4, timeLimitSec: 90),
+  1:  const LevelConfig(minNum: 1, maxNum: 5,  ops: ['+'],           blankCount: 1, timeLimitSec: 30),
+  2:  const LevelConfig(minNum: 1, maxNum: 6,  ops: ['+'],           blankCount: 2, timeLimitSec: 45),
+  3:  const LevelConfig(minNum: 1, maxNum: 7,  ops: ['+'],           blankCount: 3, timeLimitSec: 60),
+  4:  const LevelConfig(minNum: 1, maxNum: 8,  ops: ['+'],           blankCount: 4, timeLimitSec: 75),
+  5:  const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+'],           blankCount: 5, timeLimitSec: 90),
+  6:  const LevelConfig(minNum: 2, maxNum: 12, ops: ['+', '-'],      blankCount: 5, timeLimitSec: 90),
+  7:  const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+', '-'],      blankCount: 6, timeLimitSec: 105),
+  8:  const LevelConfig(minNum: 2, maxNum: 12, ops: ['+', '-'],      blankCount: 6, timeLimitSec: 105),
+  9:  const LevelConfig(minNum: 1, maxNum: 12, ops: ['+', '-'],      blankCount: 7, timeLimitSec: 120),
+  10: const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+', '-', '*'], blankCount: 8, timeLimitSec: 120),
 };
 
 /// Get config for a level — falls back to level 10 config for higher levels

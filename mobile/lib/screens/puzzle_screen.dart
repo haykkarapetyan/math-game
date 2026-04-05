@@ -168,8 +168,6 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                   selectedCell: puzzleState.selectedCell,
                   wrongCells: puzzleState.wrongCells,
                   onCellTap: (cellKey) {
-                    // Allow tapping blank, unanswered cells
-                    // Check both local answers map and cell.isBlank
                     final parts = cellKey.split(',');
                     final r = int.parse(parts[0]);
                     final c = int.parse(parts[1]);
@@ -180,6 +178,11 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                     if (isAnswerable) {
                       ref.read(puzzleProvider.notifier).selectCell(cellKey);
                     }
+                  },
+                  onDrop: (cellKey, poolIndex) {
+                    // Direct drag-and-drop: select cell then place number
+                    ref.read(puzzleProvider.notifier).selectCell(cellKey);
+                    ref.read(puzzleProvider.notifier).selectPoolNumber(poolIndex);
                   },
                 ),
               ),

@@ -7,6 +7,7 @@ class CrosswordGrid extends StatelessWidget {
   final String? selectedCell;
   final Set<String> wrongCells;
   final ValueChanged<String> onCellTap;
+  final void Function(String cellKey, int poolIndex)? onDrop;
 
   const CrosswordGrid({
     super.key,
@@ -15,6 +16,7 @@ class CrosswordGrid extends StatelessWidget {
     this.selectedCell,
     this.wrongCells = const {},
     required this.onCellTap,
+    this.onDrop,
   });
 
   @override
@@ -32,8 +34,7 @@ class CrosswordGrid extends StatelessWidget {
           height: gridHeight,
           child: Stack(
             children: [
-              for (final cell in puzzle.cells)
-                _buildCell(cell, cellSize),
+              for (final cell in puzzle.cells) _buildCell(cell, cellSize),
             ],
           ),
         );
@@ -54,7 +55,11 @@ class CrosswordGrid extends StatelessWidget {
     double fontSize = cellSize * 0.45;
 
     if (cell.type == CellType.op) {
-      final opDisplay = cell.value == '*' ? '\u00D7' : cell.value == '/' ? '\u00F7' : '${cell.value}';
+      final opDisplay = cell.value == '*'
+          ? '\u00D7'
+          : cell.value == '/'
+              ? '\u00F7'
+              : '${cell.value}';
       displayText = opDisplay;
       textColor = isWrong ? const Color(0xFFD32F2F) : const Color(0xFF5D7B9A);
       fontSize = cellSize * 0.38;
@@ -109,29 +114,57 @@ class CrosswordGrid extends StatelessWidget {
       );
     }
 
+    final cellWidget = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.all(1.5),
+      decoration: decoration,
+      alignment: Alignment.center,
+      child: Text(
+        displayText,
+        style: TextStyle(
+          color: textColor,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    final canDrop = isBlank && !hasAnswer && onDrop != null;
+
     return Positioned(
       left: cell.col * cellSize,
       top: cell.row * cellSize,
       width: cellSize,
       height: cellSize,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: isBlank && !hasAnswer ? () => onCellTap(key) : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(1.5),
-          decoration: decoration,
-          alignment: Alignment.center,
-          child: Text(
-            displayText,
-            style: TextStyle(
-              color: textColor,
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
+      child: canDrop
+          ? DragTarget<int>(
+              onAcceptWithDetails: (details) {
+                onDrop!(key, details.data);
+              },
+              builder: (context, candidateData, rejectedData) {
+                final isHovering = candidateData.isNotEmpty;
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onCellTap(key),
+                  child: isHovering
+                      ? Container(
+                          margin: const EdgeInsets.all(1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFBBDEFB),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: const Color(0xFF3D5AFE), width: 2.5),
+                          ),
+                        )
+                      : cellWidget,
+                );
+              },
+            )
+          : GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: isBlank && !hasAnswer ? () => onCellTap(key) : null,
+              child: cellWidget,
             ),
-          ),
-        ),
-      ),
     );
   }
 }
