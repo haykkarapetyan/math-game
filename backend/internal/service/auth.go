@@ -25,6 +25,7 @@ type RegisterRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Country  string `json:"country"`
 }
 
 type LoginRequest struct {
@@ -63,6 +64,11 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 
+	country := req.Country
+	if len(country) > 2 {
+		country = country[:2]
+	}
+
 	user := model.User{
 		ID:           uuid.New(),
 		Username:     req.Username,
@@ -70,6 +76,7 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 		PasswordHash: string(hash),
 		Language:     "hy",
 		Avatar:       "fox",
+		Country:      country,
 		CreatedAt:    time.Now(),
 	}
 

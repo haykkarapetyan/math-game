@@ -128,10 +128,14 @@ type LeaderboardResponse struct {
 }
 
 func (s *SocialService) GetLeaderboard(userID uuid.UUID, scope string) ([]LeaderboardResponse, error) {
-	if scope == "friends" {
+	switch scope {
+	case "friends":
 		return s.getFriendsLeaderboard(userID)
+	case "country":
+		return s.getCountryLeaderboard(userID)
+	default:
+		return s.getGlobalLeaderboard(userID)
 	}
-	return s.getGlobalLeaderboard(userID)
 }
 
 func (s *SocialService) getGlobalLeaderboard(userID uuid.UUID) ([]LeaderboardResponse, error) {
@@ -147,6 +151,45 @@ func (s *SocialService) getGlobalLeaderboard(userID uuid.UUID) ([]LeaderboardRes
 			UserID:   st.UserID,
 			Username: user.Username,
 			Avatar:   user.Avatar,
+			XP:       st.XP,
+			IsSelf:   st.UserID == userID,
+		})
+	}
+	return result, nil
+}
+
+func (s *SocialService) getCountryLeaderboard(userID uuid.UUID) ([]LeaderboardResponse, error) {
+	// Get user's country
+	var user model.User
+	s.db.First(&user, "id = ?", userID)
+	if user.Country == "" {
+		return s.getGlobalLeaderboard(userID) // fallback if no country set
+	}
+
+	// Get all users in same country
+	var countryUsers []model.User
+	s.db.Where("country = ?", user.Country).Find(&countryUsers)
+	countryIDs := make([]uuid.UUID, len(countryUsers))
+	for i, u := range countryUsers {
+		countryIDs[i] = u.ID
+	}
+
+	var stats []model.UserStats
+	s.db.Where("user_id IN ?", countryIDs).Order("xp DESC").Limit(50).Find(&stats)
+
+	userMap := map[uuid.UUID]model.User{}
+	for _, u := range countryUsers {
+		userMap[u.ID] = u
+	}
+
+	result := make([]LeaderboardResponse, 0, len(stats))
+	for i, st := range stats {
+		u := userMap[st.UserID]
+		result = append(result, LeaderboardResponse{
+			Rank:     i + 1,
+			UserID:   st.UserID,
+			Username: u.Username,
+			Avatar:   u.Avatar,
 			XP:       st.XP,
 			IsSelf:   st.UserID == userID,
 		})

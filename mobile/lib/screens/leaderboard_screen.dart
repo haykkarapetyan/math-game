@@ -18,7 +18,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -41,15 +41,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final mockLeaderboard = ref.watch(leaderboardProvider);
     final apiGlobal = ref.watch(apiLeaderboardProvider('global'));
     final apiFriends = ref.watch(apiLeaderboardProvider('friends'));
+    final apiCountry = ref.watch(apiLeaderboardProvider('country'));
 
     final globalIsApi = apiGlobal.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
     final friendsIsApi = apiFriends.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
-    final globalEntries = apiGlobal.when(
-      data: (d) => d.isNotEmpty ? d : mockLeaderboard,
-      loading: () => mockLeaderboard,
-      error: (_, _) => mockLeaderboard,
-    );
-    final friendEntries = apiFriends.when(
+    final countryIsApi = apiCountry.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
+
+    List resolve(AsyncValue<List<Map<String, dynamic>>> av) => av.when(
       data: (d) => d.isNotEmpty ? d : mockLeaderboard,
       loading: () => mockLeaderboard,
       error: (_, _) => mockLeaderboard,
@@ -65,8 +63,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
           unselectedLabelColor: const Color(0xFF90A4AE),
           indicatorColor: const Color(0xFF3D5AFE),
           tabs: const [
-            Tab(text: 'Global'),
+            Tab(text: 'Country'),
             Tab(text: 'Friends'),
+            Tab(text: 'Total'),
           ],
         ),
       ),
@@ -74,18 +73,25 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         controller: _tabController,
         children: [
           _LeaderboardList(
-            entries: globalEntries,
+            entries: resolve(apiCountry),
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
-            isDemo: !globalIsApi,
+            isDemo: !countryIsApi,
           ),
           _LeaderboardList(
-            entries: friendEntries,
+            entries: resolve(apiFriends),
             currentPlayerXp: player.xp,
             currentPlayerAvatar: player.avatarId,
             currentPlayerName: player.username,
             isDemo: !friendsIsApi,
+          ),
+          _LeaderboardList(
+            entries: resolve(apiGlobal),
+            currentPlayerXp: player.xp,
+            currentPlayerAvatar: player.avatarId,
+            currentPlayerName: player.username,
+            isDemo: !globalIsApi,
           ),
         ],
       ),

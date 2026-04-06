@@ -13,6 +13,7 @@ type User struct {
 	PasswordHash string    `gorm:"not null" json:"-"`
 	Language     string    `gorm:"type:char(2);default:'hy'" json:"language"`
 	Avatar       string    `gorm:"default:'fox'" json:"avatar"`
+	Country      string    `gorm:"type:char(2);default:''" json:"country"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

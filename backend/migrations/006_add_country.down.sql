@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_users_country;
+ALTER TABLE users DROP COLUMN IF EXISTS country;
