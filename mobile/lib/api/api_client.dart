@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// For real device testing, change localhost to your machine's IP (e.g. 192.168.x.x)
-const String baseUrl = 'http://localhost:3000/api';
+// Production API server
+const String baseUrl = 'http://54.36.112.143/api';
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
