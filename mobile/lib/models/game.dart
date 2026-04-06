@@ -44,6 +44,7 @@ class Level {
   final int stars; // 0-3, earned by player
   final bool unlocked;
   final bool completed;
+  final bool isBonus;
 
   const Level({
     required this.id,
@@ -52,5 +53,6 @@ class Level {
     this.stars = 0,
     this.unlocked = false,
     this.completed = false,
+    this.isBonus = false,
   });
 }

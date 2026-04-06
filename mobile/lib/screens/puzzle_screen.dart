@@ -14,12 +14,14 @@ class PuzzleScreen extends ConsumerStatefulWidget {
   final int levelId;
   final int tierId;
   final int chapterId;
+  final bool isBonus;
 
   const PuzzleScreen({
     super.key,
     required this.levelId,
     required this.tierId,
     required this.chapterId,
+    this.isBonus = false,
   });
 
   @override
@@ -86,7 +88,10 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
         _timer?.cancel();
         _onPuzzleComplete(next);
       }
-      if (next != null && next.failed && (prev == null || !prev.failed)) {
+      if (!widget.isBonus &&
+          next != null &&
+          next.failed &&
+          (prev == null || !prev.failed)) {
         _timer?.cancel();
         _onGameOver();
       }
@@ -104,10 +109,20 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     final isOverTime = elapsed > timeLimit;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: widget.isBonus
+          ? const Color(0xFFFFF8E1)
+          : const Color(0xFFF0F4F8),
       appBar: AppBar(
-        title: Text('Level ${widget.levelId}',
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+            widget.isBonus ? 'BONUS LEVEL' : 'Level ${widget.levelId}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isBonus
+                  ? const Color(0xFFFF8F00)
+                  : const Color(0xFF2C3E50),
+            )),
+        backgroundColor:
+            widget.isBonus ? const Color(0xFFFFF8E1) : Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
@@ -121,25 +136,40 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Hearts
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(
-                    3,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(right: 2),
-                      child: Icon(
-                        i < puzzleState.hearts
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        size: 22,
-                        color: i < puzzleState.hearts
-                            ? const Color(0xFFE53935)
-                            : const Color(0xFFBDBDBD),
+                // Hearts (hidden for bonus levels)
+                if (widget.isBonus)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text('2x XP',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13)),
+                  )
+                else
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(
+                      3,
+                      (i) => Padding(
+                        padding: const EdgeInsets.only(right: 2),
+                        child: Icon(
+                          i < puzzleState.hearts
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 22,
+                          color: i < puzzleState.hearts
+                              ? const Color(0xFFE53935)
+                              : const Color(0xFFBDBDBD),
+                        ),
                       ),
                     ),
                   ),
-                ),
                 // Timer
                 _StatChip(
                   icon: Icons.timer_outlined,
@@ -357,14 +387,18 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
   }
 
   int _calculateXp(int stars) {
+    int base;
     switch (stars) {
       case 3:
-        return 100;
+        base = 100;
       case 2:
-        return 50;
+        base = 50;
       default:
-        return 25;
+        base = 25;
     }
+    // Bonus levels give 2x XP
+    if (widget.isBonus) base *= 2;
+    return base;
   }
 }
 

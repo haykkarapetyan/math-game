@@ -44,6 +44,28 @@ LevelConfig getConfig(int levelId) {
       );
 }
 
+/// Bonus level config — harder than the preceding level, tighter time
+LevelConfig getBonusConfig(int levelNumber) {
+  // Bonus after level 5: based on level 5 config but harder
+  // Bonus after level 10: based on level 10 config but harder
+  final baseLevelNum = levelNumber == 6 ? 5 : 10;
+  final base = getConfig(baseLevelNum);
+  return LevelConfig(
+    minNum: base.minNum,
+    maxNum: base.maxNum,
+    ops: base.ops,
+    blankCount: (base.blankCount + 1).clamp(1, 8),
+    timeLimitSec: (base.timeLimitSec * 0.75).round(),
+  );
+}
+
+/// XP multiplier for bonus levels
+int bonusXpMultiplier(int levelNumber) {
+  if (levelNumber == 6) return 2;
+  if (levelNumber == 12) return 3;
+  return 1;
+}
+
 /// Generates a valid 2x2 crossword puzzle
 ///
 /// Grid layout:

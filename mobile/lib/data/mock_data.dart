@@ -17,15 +17,7 @@ final List<Tier> mockTiers = [
         name: 'Addition',
         tierId: 1,
         unlocked: true,
-        levels: List.generate(
-          10,
-          (i) => Level(
-            id: i + 1,
-            number: i + 1,
-            chapterId: 1,
-            unlocked: i == 0,
-          ),
-        ),
+        levels: generateLevelsWithBonus(1, 1),
       ),
       Chapter(
         id: 2,
@@ -107,6 +99,25 @@ final List<Tier> mockTiers = [
     ],
   ),
 ];
+
+/// Generate levels with bonus levels after every 5
+/// Layout: 1,2,3,4,5,[BONUS],6,7,8,9,10,[BONUS]
+List<Level> generateLevelsWithBonus(int startId, int chapterId) {
+  final levels = <Level>[];
+  int id = startId;
+  for (int i = 1; i <= 12; i++) {
+    final isBonus = (i == 6 || i == 12);
+    levels.add(Level(
+      id: id,
+      number: i,
+      chapterId: chapterId,
+      unlocked: i == 1,
+      isBonus: isBonus,
+    ));
+    id++;
+  }
+  return levels;
+}
 
 /// Tracks which puzzles have been shown per level
 final Map<int, Set<String>> _usedPuzzles = {};

@@ -45,10 +45,12 @@ final appRouter = GoRouter(
         final tierId = int.parse(state.uri.queryParameters['tierId'] ?? '1');
         final chapterId =
             int.parse(state.uri.queryParameters['chapterId'] ?? '1');
+        final isBonus = state.uri.queryParameters['bonus'] == '1';
         return PuzzleScreen(
           levelId: levelId,
           tierId: tierId,
           chapterId: chapterId,
+          isBonus: isBonus,
         );
       },
     ),

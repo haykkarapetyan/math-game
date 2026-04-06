@@ -64,36 +64,43 @@ class LevelsScreen extends ConsumerWidget {
           final completed = level.completed;
           final unlocked = level.unlocked;
           final stars = level.stars;
+          final isBonus = level.isBonus;
 
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: unlocked
                 ? () => context.push(
-                      '/puzzle/${level.id}?tierId=$tierId&chapterId=1',
+                      '/puzzle/${level.id}?tierId=$tierId&chapterId=1&bonus=${isBonus ? 1 : 0}',
                     )
                 : null,
             child: Container(
               decoration: BoxDecoration(
                 color: !unlocked
                     ? const Color(0xFFE8E8E8)
-                    : completed
-                        ? const Color(0xFFE8F5E9)
-                        : Colors.white,
+                    : isBonus
+                        ? const Color(0xFFFFF8E1)
+                        : completed
+                            ? const Color(0xFFE8F5E9)
+                            : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: !unlocked
                       ? const Color(0xFFD0D0D0)
-                      : completed
-                          ? const Color(0xFF81C784)
-                          : const Color(0xFF90CAF9),
-                  width: 1.5,
+                      : isBonus
+                          ? const Color(0xFFFFB300)
+                          : completed
+                              ? const Color(0xFF81C784)
+                              : const Color(0xFF90CAF9),
+                  width: isBonus ? 2.5 : 1.5,
                 ),
                 boxShadow: !unlocked
                     ? null
                     : [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 4,
+                          color: isBonus
+                              ? Colors.amber.withValues(alpha: 0.2)
+                              : Colors.black.withValues(alpha: 0.05),
+                          blurRadius: isBonus ? 8 : 4,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -104,6 +111,9 @@ class LevelsScreen extends ConsumerWidget {
                   if (!unlocked)
                     const Icon(Icons.lock,
                         size: 18, color: Color(0xFFBDBDBD))
+                  else if (isBonus)
+                    const Icon(Icons.star,
+                        size: 20, color: Color(0xFFFFB300))
                   else
                     Text(
                       '${level.number}',
