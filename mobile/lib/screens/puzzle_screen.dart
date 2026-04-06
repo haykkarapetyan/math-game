@@ -222,24 +222,26 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                         },
                       ),
                       const SizedBox(height: 8),
-                      // Action buttons
+                      // Action buttons (disabled for guests)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _ActionButton(
                             icon: Icons.undo,
-                            label:
-                                'Undo (${puzzleState.maxUndos - puzzleState.undosUsed})',
-                            enabled: puzzleState.canUndo,
+                            label: _isGuest(ref)
+                                ? 'Undo (Login)'
+                                : 'Undo (${puzzleState.maxUndos - puzzleState.undosUsed})',
+                            enabled: !_isGuest(ref) && puzzleState.canUndo,
                             onTap: () =>
                                 ref.read(puzzleProvider.notifier).undo(),
                           ),
                           const SizedBox(width: 16),
                           _ActionButton(
                             icon: Icons.lightbulb_outline,
-                            label:
-                                'Hint (${puzzleState.maxHints - puzzleState.hintsUsed})',
-                            enabled: puzzleState.canHint,
+                            label: _isGuest(ref)
+                                ? 'Hint (Login)'
+                                : 'Hint (${puzzleState.maxHints - puzzleState.hintsUsed})',
+                            enabled: !_isGuest(ref) && puzzleState.canHint,
                             onTap: () =>
                                 ref.read(puzzleProvider.notifier).useHint(),
                           ),
@@ -347,6 +349,11 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
         ),
       );
     });
+  }
+
+  bool _isGuest(WidgetRef ref) {
+    final player = ref.read(playerProvider);
+    return !player.isLoggedIn || player.username == 'Guest';
   }
 
   int _calculateXp(int stars) {

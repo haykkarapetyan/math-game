@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
+import '../widgets/guest_lock_overlay.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -28,8 +29,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final mockLeaderboard = ref.watch(leaderboardProvider);
     final player = ref.watch(playerProvider);
+    if (!player.isLoggedIn || player.username == 'Guest') {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF0F4F8),
+        appBar: AppBar(title: const Text('Leaderboard')),
+        body: const GuestLockOverlay(title: 'Leaderboard'),
+      );
+    }
+
+    final mockLeaderboard = ref.watch(leaderboardProvider);
     final apiGlobal = ref.watch(apiLeaderboardProvider('global'));
     final apiFriends = ref.watch(apiLeaderboardProvider('friends'));
 

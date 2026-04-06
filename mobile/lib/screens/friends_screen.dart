@@ -3,12 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_client.dart';
 import '../providers/api_providers.dart';
 import '../providers/game_provider.dart';
+import '../widgets/guest_lock_overlay.dart';
 
 class FriendsScreen extends ConsumerWidget {
   const FriendsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(playerProvider);
+    if (!player.isLoggedIn || player.username == 'Guest') {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF0F4F8),
+        appBar: AppBar(title: const Text('Friends')),
+        body: const GuestLockOverlay(title: 'Friends'),
+      );
+    }
+
     final mockFriends = ref.watch(friendsProvider);
     final apiFriends = ref.watch(apiFriendsProvider);
 
