@@ -44,13 +44,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         user['email'] ?? '',
       );
       if (mounted) context.go('/tiers');
-    } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('invalid') || msg.contains('password')) {
-        setState(() => _error = 'Invalid email or password');
-      } else {
-        setState(() => _error = 'Login failed: $msg');
-      }
+    } catch (_) {
+      setState(() => _error = 'Invalid email or password');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
