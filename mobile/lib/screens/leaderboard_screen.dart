@@ -43,12 +43,18 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final apiFriends = ref.watch(apiLeaderboardProvider('friends'));
     final apiCountry = ref.watch(apiLeaderboardProvider('country'));
 
-    final globalIsApi = apiGlobal.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
-    final friendsIsApi = apiFriends.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
-    final countryIsApi = apiCountry.whenOrNull(data: (d) => d.isNotEmpty) ?? false;
+    bool hasValidData(AsyncValue<List<Map<String, dynamic>>> av) =>
+        av.whenOrNull(data: (d) => d.where((e) => (e['username'] ?? '').toString().isNotEmpty).length >= 3) ?? false;
+    final globalIsApi = hasValidData(apiGlobal);
+    final friendsIsApi = hasValidData(apiFriends);
+    final countryIsApi = hasValidData(apiCountry);
 
     List resolve(AsyncValue<List<Map<String, dynamic>>> av) => av.when(
-      data: (d) => d.isNotEmpty ? d : mockLeaderboard,
+      data: (d) {
+        // Filter out entries with empty usernames and require at least 3
+        final valid = d.where((e) => (e['username'] ?? '').toString().isNotEmpty).toList();
+        return valid.length >= 3 ? valid : mockLeaderboard;
+      },
       loading: () => mockLeaderboard,
       error: (_, _) => mockLeaderboard,
     );

@@ -1,8 +1,9 @@
 import 'dart:math';
 import '../models/puzzle.dart';
 
-/// Configuration for each level's puzzle generation
 class LevelConfig {
+  final int gridRows; // number of equation rows (number cells)
+  final int gridCols; // number of equation cols (number cells)
   final int minNum;
   final int maxNum;
   final List<String> ops;
@@ -10,6 +11,8 @@ class LevelConfig {
   final int timeLimitSec;
 
   const LevelConfig({
+    required this.gridRows,
+    required this.gridCols,
     required this.minNum,
     required this.maxNum,
     required this.ops,
@@ -18,82 +21,67 @@ class LevelConfig {
   });
 }
 
-/// Level configs — each level adds 1 more blank, operations get harder
+/// Level configs — grid size increases + more blanks + harder ops
 final Map<int, LevelConfig> levelConfigs = {
-  1:  const LevelConfig(minNum: 1, maxNum: 5,  ops: ['+'],           blankCount: 1, timeLimitSec: 30),
-  2:  const LevelConfig(minNum: 1, maxNum: 6,  ops: ['+'],           blankCount: 2, timeLimitSec: 45),
-  3:  const LevelConfig(minNum: 1, maxNum: 7,  ops: ['+'],           blankCount: 3, timeLimitSec: 60),
-  4:  const LevelConfig(minNum: 1, maxNum: 8,  ops: ['+'],           blankCount: 4, timeLimitSec: 75),
-  5:  const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+'],           blankCount: 5, timeLimitSec: 90),
-  6:  const LevelConfig(minNum: 2, maxNum: 12, ops: ['+', '-'],      blankCount: 5, timeLimitSec: 90),
-  7:  const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+', '-'],      blankCount: 6, timeLimitSec: 105),
-  8:  const LevelConfig(minNum: 2, maxNum: 12, ops: ['+', '-'],      blankCount: 6, timeLimitSec: 105),
-  9:  const LevelConfig(minNum: 1, maxNum: 12, ops: ['+', '-'],      blankCount: 7, timeLimitSec: 120),
-  10: const LevelConfig(minNum: 1, maxNum: 9,  ops: ['+', '-', '*'], blankCount: 8, timeLimitSec: 120),
+  //        grid    nums      ops              blanks  time
+  1:  const LevelConfig(gridRows: 2, gridCols: 2, minNum: 1, maxNum: 5,  ops: ['+'],           blankCount: 1,  timeLimitSec: 30),
+  2:  const LevelConfig(gridRows: 2, gridCols: 2, minNum: 1, maxNum: 6,  ops: ['+'],           blankCount: 2,  timeLimitSec: 45),
+  3:  const LevelConfig(gridRows: 2, gridCols: 2, minNum: 1, maxNum: 7,  ops: ['+'],           blankCount: 3,  timeLimitSec: 60),
+  4:  const LevelConfig(gridRows: 2, gridCols: 2, minNum: 1, maxNum: 8,  ops: ['+'],           blankCount: 4,  timeLimitSec: 75),
+  5:  const LevelConfig(gridRows: 2, gridCols: 3, minNum: 1, maxNum: 7,  ops: ['+'],           blankCount: 4,  timeLimitSec: 90),
+  6:  const LevelConfig(gridRows: 3, gridCols: 2, minNum: 1, maxNum: 8,  ops: ['+', '-'],      blankCount: 5,  timeLimitSec: 90),
+  7:  const LevelConfig(gridRows: 3, gridCols: 3, minNum: 1, maxNum: 7,  ops: ['+'],           blankCount: 5,  timeLimitSec: 105),
+  8:  const LevelConfig(gridRows: 3, gridCols: 3, minNum: 1, maxNum: 8,  ops: ['+', '-'],      blankCount: 7,  timeLimitSec: 120),
+  9:  const LevelConfig(gridRows: 3, gridCols: 3, minNum: 1, maxNum: 9,  ops: ['+', '-'],      blankCount: 9,  timeLimitSec: 135),
+  10: const LevelConfig(gridRows: 4, gridCols: 4, minNum: 1, maxNum: 7,  ops: ['+', '-'],      blankCount: 10, timeLimitSec: 150),
 };
 
-/// Get config for a level — falls back to level 10 config for higher levels
 LevelConfig getConfig(int levelId) {
   return levelConfigs[levelId] ??
       LevelConfig(
-        minNum: 1,
-        maxNum: 12,
+        gridRows: 4, gridCols: 4,
+        minNum: 1, maxNum: 9,
         ops: const ['+', '-', '*'],
-        blankCount: 4,
-        timeLimitSec: 90,
+        blankCount: 12,
+        timeLimitSec: 150,
       );
 }
 
-/// Bonus level config — harder than the preceding level, tighter time
+/// Bonus level config
 LevelConfig getBonusConfig(int levelNumber) {
-  // Bonus after level 5: based on level 5 config but harder
-  // Bonus after level 10: based on level 10 config but harder
   final baseLevelNum = levelNumber == 6 ? 5 : 10;
   final base = getConfig(baseLevelNum);
   return LevelConfig(
+    gridRows: base.gridRows,
+    gridCols: base.gridCols,
     minNum: base.minNum,
     maxNum: base.maxNum,
     ops: base.ops,
-    blankCount: (base.blankCount + 1).clamp(1, 8),
+    blankCount: (base.blankCount + 2).clamp(1, base.gridRows * base.gridCols + base.gridRows + base.gridCols),
     timeLimitSec: (base.timeLimitSec * 0.75).round(),
   );
 }
 
-/// XP multiplier for bonus levels
 int bonusXpMultiplier(int levelNumber) {
   if (levelNumber == 6) return 2;
   if (levelNumber == 12) return 3;
   return 1;
 }
 
-/// Generates a valid 2x2 crossword puzzle
-///
-/// Grid layout:
-///   a  op1  b  =  r1    (row 0)
-///  op3     op4
-///   c  op2  d  =  r2    (row 1)
-///   =       =
-///   r3      r4
+/// Generalized NxM crossword puzzle generator
 class PuzzleGenerator {
   static final Random _rng = Random();
 
-  /// Generate a unique puzzle for a level, avoiding previously seen ones
   static Puzzle generate(int levelId, {Set<String> usedHashes = const {}}) {
     final config = getConfig(levelId);
-    var attempts = 0;
-
-    while (attempts < 5000) {
-      attempts++;
+    for (var attempt = 0; attempt < 5000; attempt++) {
       final puzzle = _tryGenerate(levelId, config);
       if (puzzle != null) {
         final hash = puzzleHash(puzzle);
-        if (!usedHashes.contains(hash)) {
-          return puzzle;
-        }
+        if (!usedHashes.contains(hash)) return puzzle;
       }
     }
-
-    // Fallback — return any valid puzzle (extremely unlikely to reach here)
+    // Fallback
     while (true) {
       final puzzle = _tryGenerate(levelId, config);
       if (puzzle != null) return puzzle;
@@ -101,104 +89,231 @@ class PuzzleGenerator {
   }
 
   static Puzzle? _tryGenerate(int levelId, LevelConfig config) {
-    final ops = config.ops;
+    final r = config.gridRows;
+    final c = config.gridCols;
 
-    // Pick 4 operators
-    final op1 = ops[_rng.nextInt(ops.length)]; // row 0
-    final op2 = ops[_rng.nextInt(ops.length)]; // row 1
-    final op3 = ops[_rng.nextInt(ops.length)]; // col 0
-    final op4 = ops[_rng.nextInt(ops.length)]; // col 1
+    // Generate number grid [r][c]
+    final nums = List.generate(r, (_) =>
+        List.generate(c, (_) => _randNum(config)));
 
-    // Pick 4 number cells: a, b, c, d
-    final a = _randNum(config);
-    final b = _randNum(config);
-    final c = _randNum(config);
-    final d = _randNum(config);
+    // Generate row operators: [r][c-1]
+    final rowOps = List.generate(r, (_) =>
+        List.generate(c - 1, (_) => config.ops[_rng.nextInt(config.ops.length)]));
 
-    // Compute results
-    final r1 = _eval(a, op1, b);
-    final r2 = _eval(c, op2, d);
-    final r3 = _eval(a, op3, c);
-    final r4 = _eval(b, op4, d);
+    // Generate column operators: [r-1][c]
+    final colOps = List.generate(r - 1, (_) =>
+        List.generate(c, (_) => config.ops[_rng.nextInt(config.ops.length)]));
 
-    // Validate: all results must be non-negative integers, reasonable size
-    if (r1 == null || r2 == null || r3 == null || r4 == null) return null;
-    if (r1 < 0 || r2 < 0 || r3 < 0 || r4 < 0) return null;
-    if (r1 > 99 || r2 > 99 || r3 > 99 || r4 > 99) return null;
+    // Compute row results (left-to-right)
+    final rowResults = <int>[];
+    for (var row = 0; row < r; row++) {
+      var result = nums[row][0];
+      for (var col = 1; col < c; col++) {
+        final v = _eval(result, rowOps[row][col - 1], nums[row][col]);
+        if (v == null) return null;
+        result = v;
+      }
+      if (result < 0 || result > 99) return null;
+      rowResults.add(result);
+    }
 
-    // Ensure numbers aren't all the same (boring puzzle)
-    if (a == b && b == c && c == d) return null;
+    // Compute column results (top-to-bottom)
+    final colResults = <int>[];
+    for (var col = 0; col < c; col++) {
+      var result = nums[0][col];
+      for (var row = 1; row < r; row++) {
+        final v = _eval(result, colOps[row - 1][col], nums[row][col]);
+        if (v == null) return null;
+        result = v;
+      }
+      if (result < 0 || result > 99) return null;
+      colResults.add(result);
+    }
 
-    // Pick which cells to blank
-    // Positions: 0=a, 1=b, 2=c, 3=d, 4=r1, 5=r2, 6=r3, 7=r4
-    final allPositions = [0, 1, 2, 3, 4, 5, 6, 7];
-    allPositions.shuffle(_rng);
-    final blankPositions = allPositions.take(config.blankCount).toList()..sort();
+    // Check not all same number
+    final allNums = nums.expand((row) => row).toSet();
+    if (allNums.length <= 1) return null;
 
-    // Check solvability: each blank must be determinable from at least one equation
-    // (simplified check — for 2x2, this is almost always true)
-    final values = [a, b, c, d, r1, r2, r3, r4];
+    // Visual grid dimensions
+    final visualRows = r * 2 - 1 + 2; // num rows + op rows + equals row + result row
+    final visualCols = c * 2 - 1 + 2; // num cols + op cols + equals col + result col
 
-    // Map position index to grid key
-    final posKeys = ['0,0', '0,2', '2,0', '2,2', '0,4', '2,4', '4,0', '4,2'];
+    // Build all value positions for blanking
+    // Index: number cells first, then row results, then col results
+    final allPositions = <_CellPos>[];
+
+    // Number cells
+    for (var row = 0; row < r; row++) {
+      for (var col = 0; col < c; col++) {
+        allPositions.add(_CellPos(row * 2, col * 2, nums[row][col]));
+      }
+    }
+    // Row result cells
+    for (var row = 0; row < r; row++) {
+      allPositions.add(_CellPos(row * 2, visualCols - 1, rowResults[row]));
+    }
+    // Column result cells
+    for (var col = 0; col < c; col++) {
+      allPositions.add(_CellPos(visualRows - 1, col * 2, colResults[col]));
+    }
+
+    // Pick blanks
+    final indices = List.generate(allPositions.length, (i) => i);
+    indices.shuffle(_rng);
+    final blankCount = config.blankCount.clamp(0, allPositions.length);
+    final blankIndices = indices.take(blankCount).toSet();
+
+    // Build cells
+    final cells = <Cell>[];
+
+    // Number cells + horizontal operators + equals + row results
+    for (var row = 0; row < r; row++) {
+      for (var col = 0; col < c; col++) {
+        final idx = row * c + col;
+        final isBlank = blankIndices.contains(idx);
+        cells.add(Cell(
+          row: row * 2, col: col * 2,
+          type: CellType.number,
+          value: isBlank ? null : nums[row][col],
+          given: !isBlank,
+        ));
+        // Horizontal operator (between number cells)
+        if (col < c - 1) {
+          cells.add(Cell(
+            row: row * 2, col: col * 2 + 1,
+            type: CellType.op,
+            value: rowOps[row][col],
+            given: true,
+          ));
+        }
+      }
+      // Equals sign for row (between last number and result)
+      cells.add(Cell(row: row * 2, col: visualCols - 2, type: CellType.equals, value: '=', given: true));
+
+      // Row result
+      final rIdx = r * c + row;
+      final rBlank = blankIndices.contains(rIdx);
+      cells.add(Cell(
+        row: row * 2, col: visualCols - 1,
+        type: CellType.number,
+        value: rBlank ? null : rowResults[row],
+        given: !rBlank,
+      ));
+    }
+
+    // Vertical operators
+    for (var row = 0; row < r - 1; row++) {
+      for (var col = 0; col < c; col++) {
+        cells.add(Cell(
+          row: row * 2 + 1, col: col * 2,
+          type: CellType.op,
+          value: colOps[row][col],
+          given: true,
+        ));
+      }
+    }
+
+    // Equals row (for columns) — between last number row and result row
+    for (var col = 0; col < c; col++) {
+      cells.add(Cell(
+        row: visualRows - 2, col: col * 2,
+        type: CellType.equals, value: '=', given: true,
+      ));
+    }
+
+    // Column results row
+    for (var col = 0; col < c; col++) {
+      final cIdx = r * c + r + col;
+      final cBlank = blankIndices.contains(cIdx);
+      cells.add(Cell(
+        row: visualRows - 1, col: col * 2,
+        type: CellType.number,
+        value: cBlank ? null : colResults[col],
+        given: !cBlank,
+      ));
+    }
+
+    // Build answers + number pool
     final answers = <String, int>{};
     final numberPool = <int>[];
-    for (final pos in blankPositions) {
-      answers[posKeys[pos]] = values[pos];
-      numberPool.add(values[pos]);
+    for (final idx in blankIndices) {
+      final pos = allPositions[idx];
+      final key = '${pos.row},${pos.col}';
+      answers[key] = pos.value;
+      numberPool.add(pos.value);
     }
     numberPool.sort();
 
-    // Build cells
-    final cells = <Cell>[
-      // Row 0
-      _numCell(0, 0, a, !blankPositions.contains(0)),
-      _opCell(0, 1, op1),
-      _numCell(0, 2, b, !blankPositions.contains(1)),
-      _eqCell(0, 3),
-      _numCell(0, 4, r1, !blankPositions.contains(4)),
-      // Vertical ops
-      _opCell(1, 0, op3),
-      _opCell(1, 2, op4),
-      // Row 1
-      _numCell(2, 0, c, !blankPositions.contains(2)),
-      _opCell(2, 1, op2),
-      _numCell(2, 2, d, !blankPositions.contains(3)),
-      _eqCell(2, 3),
-      _numCell(2, 4, r2, !blankPositions.contains(5)),
-      // Equals row
-      _eqCell(3, 0),
-      _eqCell(3, 2),
-      // Results row
-      _numCell(4, 0, r3, !blankPositions.contains(6)),
-      _numCell(4, 2, r4, !blankPositions.contains(7)),
-    ];
+    // Build equations
+    final equations = <MathEquation>[];
 
-    // Build equations with resultKey for proper validation
-    final equations = [
-      MathEquation(
-        num1Key: '0,0', num2Key: '0,2', resultKey: '0,4', op: op1,
-        allCellKeys: ['0,0', '0,1', '0,2', '0,3', '0,4'],
-      ),
-      MathEquation(
-        num1Key: '2,0', num2Key: '2,2', resultKey: '2,4', op: op2,
-        allCellKeys: ['2,0', '2,1', '2,2', '2,3', '2,4'],
-      ),
-      MathEquation(
-        num1Key: '0,0', num2Key: '2,0', resultKey: '4,0', op: op3,
-        allCellKeys: ['0,0', '1,0', '2,0', '3,0', '4,0'],
-      ),
-      MathEquation(
-        num1Key: '0,2', num2Key: '2,2', resultKey: '4,2', op: op4,
-        allCellKeys: ['0,2', '1,2', '2,2', '3,2', '4,2'],
-      ),
-    ];
+    // Row equations (each row: chained evaluation)
+    for (var row = 0; row < r; row++) {
+      // For multi-number rows, create pairwise equations
+      // But for validation, we need the full chain
+      // Simple approach: one equation per row covering all cells
+      final numKeys = List.generate(c, (col) => '${row * 2},${col * 2}');
+      final opKeys = List.generate(c - 1, (col) => '${row * 2},${col * 2 + 1}');
+      final eqKey = '${row * 2},${(c - 1) * 2 + 1}';
+      final resultKey = '${row * 2},${visualCols - 1}';
+      final allKeys = [...numKeys, ...opKeys, eqKey, resultKey];
+
+      // For 2-number rows, use simple MathEquation
+      if (c == 2) {
+        equations.add(MathEquation(
+          num1Key: numKeys[0], num2Key: numKeys[1],
+          resultKey: resultKey, op: rowOps[row][0],
+          allCellKeys: allKeys,
+        ));
+      } else {
+        // For 3+ number rows, create chain equations
+        // First pair
+        equations.add(MathEquation(
+          num1Key: numKeys[0], num2Key: numKeys[1],
+          resultKey: resultKey, op: rowOps[row][0],
+          allCellKeys: allKeys,
+        ));
+        // Additional pairs share the result validation
+        for (var i = 1; i < c - 1; i++) {
+          equations.add(MathEquation(
+            num1Key: numKeys[i], num2Key: numKeys[i + 1],
+            resultKey: resultKey, op: rowOps[row][i],
+            allCellKeys: allKeys,
+          ));
+        }
+      }
+    }
+
+    // Column equations
+    for (var col = 0; col < c; col++) {
+      final numKeys = List.generate(r, (row) => '${row * 2},${col * 2}');
+      final opKeys = List.generate(r - 1, (row) => '${row * 2 + 1},${col * 2}');
+      final eqKey = '${(r - 1) * 2 + 1},${col * 2}';
+      final resultKey = '${visualRows - 1},${col * 2}';
+      final allKeys = [...numKeys, ...opKeys, eqKey, resultKey];
+
+      if (r == 2) {
+        equations.add(MathEquation(
+          num1Key: numKeys[0], num2Key: numKeys[1],
+          resultKey: resultKey, op: colOps[0][col],
+          allCellKeys: allKeys,
+        ));
+      } else {
+        for (var i = 0; i < r - 1; i++) {
+          equations.add(MathEquation(
+            num1Key: numKeys[i], num2Key: numKeys[i + 1],
+            resultKey: resultKey, op: colOps[i][col],
+            allCellKeys: allKeys,
+          ));
+        }
+      }
+    }
 
     return Puzzle(
       id: levelId * 10000 + _rng.nextInt(10000),
       levelId: levelId,
-      gridRows: 5,
-      gridCols: 5,
+      gridRows: visualRows,
+      gridCols: visualCols,
       cells: cells,
       answers: answers,
       numberPool: numberPool,
@@ -221,16 +336,6 @@ class PuzzleGenerator {
     }
   }
 
-  static Cell _numCell(int r, int c, int value, bool given) =>
-      Cell(row: r, col: c, type: CellType.number, value: given ? value : null, given: given);
-
-  static Cell _opCell(int r, int c, String op) =>
-      Cell(row: r, col: c, type: CellType.op, value: op, given: true);
-
-  static Cell _eqCell(int r, int c) =>
-      Cell(row: r, col: c, type: CellType.equals, value: '=', given: true);
-
-  /// Hash a puzzle by its cell values for deduplication
   static String puzzleHash(Puzzle puzzle) {
     final buf = StringBuffer();
     for (final cell in puzzle.cells) {
@@ -242,4 +347,11 @@ class PuzzleGenerator {
     }
     return buf.toString();
   }
+}
+
+class _CellPos {
+  final int row;
+  final int col;
+  final int value;
+  const _CellPos(this.row, this.col, this.value);
 }
