@@ -199,15 +199,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // Dev: show all pages
-              TextButton.icon(
-                onPressed: () => context.push('/pages'),
-                icon: const Icon(Icons.grid_view, size: 16),
-                label: const Text('All Pages'),
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFBDBDBD)),
-              ),
+
+
             ],
           ),
         ),

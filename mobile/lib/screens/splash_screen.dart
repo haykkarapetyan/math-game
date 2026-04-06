@@ -1,23 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../api/api_client.dart';
+import '../providers/game_provider.dart';
 import '../widgets/game_loader.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (mounted) {
-        context.go('/login');
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    final api = ref.read(apiClientProvider);
+    if (await api.hasToken()) {
+      // Try to restore session
+      try {
+        final data = await api.getMe();
+        final user = data['user'];
+        ref.read(playerProvider.notifier).login(
+          user['username'] ?? '',
+          user['email'] ?? '',
+        );
+        if (user['avatar'] != null) {
+          ref.read(playerProvider.notifier).setAvatar(user['avatar']);
+        }
+        if (mounted) context.go('/tiers');
+        return;
+      } catch (_) {
+        // Token expired or invalid — go to login
       }
-    });
+    }
+
+    if (mounted) context.go('/login');
   }
 
   @override

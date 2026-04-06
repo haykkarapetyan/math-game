@@ -2,20 +2,21 @@ import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 
-/// Current locale provider — defaults to English
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));
 
 void main() {
   runApp(
     ProviderScope(
-      child: DevicePreview(
-        enabled: kIsWeb,
-        builder: (context) => const MathGameApp(),
-      ),
+      child: kDebugMode && kIsWeb
+          ? DevicePreview(
+              enabled: true,
+              builder: (context) => const MathGameApp(),
+            )
+          : const MathGameApp(),
     ),
   );
 }
@@ -38,7 +39,7 @@ class MathGameApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: DevicePreview.appBuilder,
+      builder: kDebugMode && kIsWeb ? DevicePreview.appBuilder : null,
       theme: ThemeData(
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF0F4F8),
